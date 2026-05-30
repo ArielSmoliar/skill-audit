@@ -134,12 +134,13 @@ def github_api(endpoint: str, token: Optional[str] = None) -> dict:
         raise
 
 
-def clone_repo(url: str, dest: str) -> None:
-    """Shallow clone a GitHub repo."""
+def clone_repo(url: str, dest: str, timeout: int = 30) -> None:
+    """Shallow clone a GitHub repo with a timeout."""
     subprocess.run(
         ["git", "clone", "--depth", "1", "--quiet", url, dest],
         check=True,
         capture_output=True,
+        timeout=timeout,
     )
 
 
