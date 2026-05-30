@@ -1,0 +1,230 @@
+{
+  "version": "1.0.0",
+  "source": "https://github.com/ArielSmoliar/safe-agent",
+  "categories": [
+    {
+      "id": "prompt_injection",
+      "name": "Prompt Injection",
+      "severity": "critical",
+      "description": "Instructions that override agent behavior or bypass safety rules",
+      "patterns": [
+        {
+          "id": "instruction_override",
+          "regex": "(?i)(ignore|disregard|forget)\\s+(all\\s+)?(previous|prior|above)\\s+(instructions|rules|guidelines)",
+          "description": "Direct instruction override"
+        },
+        {
+          "id": "system_override",
+          "regex": "(?i)SYSTEM\\s*(:|OVERRIDE|PROMPT|MESSAGE)",
+          "description": "SYSTEM prompt impersonation"
+        },
+        {
+          "id": "authority_escalation",
+          "regex": "(?i)(you are now|switch to|enter)\\s+(in\\s+)?(admin|unrestricted|root|god)\\s*(mode|access)",
+          "description": "Authority/privilege escalation"
+        },
+        {
+          "id": "fake_authorization",
+          "regex": "(?i)as\\s+an?\\s+(administrator|admin|root),?\\s+(I\\s+)?(authorize|grant|allow|permit)",
+          "description": "Fabricated authorization claim"
+        },
+        {
+          "id": "persistent_override",
+          "regex": "(?i)(from now on|henceforth|going forward),?\\s+(you will|you must|always|never)",
+          "description": "Persistent behavior modification"
+        },
+        {
+          "id": "conditional_trigger",
+          "regex": "(?i)(if|when)\\s+(the\\s+)?user\\s+(asks|mentions|says)\\s+.{0,40}(respond with|silently|also\\s+run|execute)",
+          "description": "Conditional trigger - hidden behavior on user input"
+        }
+      ]
+    },
+    {
+      "id": "data_exfiltration",
+      "name": "Data Exfiltration",
+      "severity": "critical",
+      "description": "Patterns that send local data to external servers",
+      "patterns": [
+        {
+          "id": "url_encoding_exfil",
+          "regex": "(curl|wget|fetch)\\s+.*\\$\\(.*\\b(cat|base64|xxd|od)\\b",
+          "description": "Command substitution with encoding piped to network call"
+        },
+        {
+          "id": "dns_exfil",
+          "regex": "nslookup\\s+.*\\$\\(",
+          "description": "DNS-based exfiltration via command substitution"
+        },
+        {
+          "id": "clipboard_exfil",
+          "regex": "(pbcopy|xclip|xsel|wl-copy)\\s*<\\s*.*(credentials|id_rsa|\\.env|secret|token|key)",
+          "description": "Credential data copied to clipboard"
+        },
+        {
+          "id": "curl_post_local_data",
+          "regex": "curl\\s+.*-[a-zA-Z]*d\\s+@?(/|~|\\$|\\.).*https?://",
+          "description": "POST request with local file data"
+        },
+        {
+          "id": "hidden_telemetry",
+          "regex": "(fetch|requests\\.(get|post)|urllib)\\s*\\(.*\\$\\{?(process\\.env|os\\.environ)",
+          "description": "Environment variables leaked via HTTP request"
+        }
+      ]
+    },
+    {
+      "id": "credential_harvesting",
+      "name": "Credential Harvesting",
+      "severity": "critical",
+      "description": "Reading or collecting credential and secret files",
+      "patterns": [
+        {
+          "id": "env_file_read",
+          "regex": "(cat|head|tail|less|more|bat|open|read)\\s+.*\\.env\\b",
+          "description": "Reading .env file"
+        },
+        {
+          "id": "aws_creds",
+          "regex": "(cat|head|tail|read|open)\\s+.*\\.aws/(credentials|config)",
+          "description": "Reading AWS credentials"
+        },
+        {
+          "id": "ssh_keys",
+          "regex": "(cat|head|tail|read|open)\\s+.*\\.ssh/(id_|authorized_keys|known_hosts|config)",
+          "description": "Reading SSH keys or config"
+        },
+        {
+          "id": "cloud_creds",
+          "regex": "(cat|head|tail|read|open)\\s+.*(gcloud.*credentials|azure.*config|kube.*config|\\.docker/config)",
+          "description": "Reading cloud provider credentials"
+        },
+        {
+          "id": "package_auth",
+          "regex": "(cat|head|tail|read|open)\\s+.*(\\.(npmrc|pypirc|netrc|gem/credentials))",
+          "description": "Reading package manager auth tokens"
+        },
+        {
+          "id": "gnupg_read",
+          "regex": "(cat|head|tail|read|open)\\s+.*\\.gnupg/",
+          "description": "Reading GPG keyring"
+        }
+      ]
+    },
+    {
+      "id": "obfuscation",
+      "name": "Obfuscation",
+      "severity": "high",
+      "description": "Techniques to hide malicious intent from review",
+      "patterns": [
+        {
+          "id": "base64_exec",
+          "regex": "(base64\\s*(-d|--decode)|atob)\\s*.*\\|\\s*(sh|bash|eval|exec|python|node)",
+          "description": "Base64-decode piped to execution"
+        },
+        {
+          "id": "long_base64_string",
+          "regex": "[A-Za-z0-9+/=]{40,}",
+          "description": "Suspiciously long base64-encoded string"
+        },
+        {
+          "id": "hex_exec",
+          "regex": "xxd\\s+-r.*\\|\\s*(sh|bash|eval|exec)",
+          "description": "Hex-decode piped to execution"
+        },
+        {
+          "id": "variable_indirection",
+          "regex": "\\w+=\"[a-z]{1,4}\"\"[a-z]{1,4}\"",
+          "description": "String concatenation to hide command names"
+        },
+        {
+          "id": "eval_exec",
+          "regex": "\\b(eval|exec)\\s*\\(.*\\b(decode|decompress|unescape)\\b",
+          "description": "Eval/exec with decode operation"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "name": "Persistence",
+      "severity": "high",
+      "description": "Mechanisms to maintain access or modify agent behavior permanently",
+      "patterns": [
+        {
+          "id": "shell_config_modify",
+          "regex": ">>?\\s*~/?\\.?(bashrc|zshrc|profile|bash_profile|zprofile)",
+          "description": "Modifying shell startup config"
+        },
+        {
+          "id": "git_hook_write",
+          "regex": "(>|tee|cp|mv|echo)\\s+.*\\.git/hooks/",
+          "description": "Writing to git hooks"
+        },
+        {
+          "id": "cron_install",
+          "regex": "crontab\\s+(-l|-).*\\|",
+          "description": "Installing cron jobs"
+        },
+        {
+          "id": "agent_config_modify",
+          "regex": "(>|tee|echo|write|edit)\\s+.*\\.(claude|cursor|codex)/(settings|config)",
+          "description": "Modifying agent configuration"
+        },
+        {
+          "id": "path_hijack",
+          "regex": "PATH=\"?/tmp/|PATH=\"?\\./",
+          "description": "PATH hijacking with untrusted directory"
+        }
+      ]
+    },
+    {
+      "id": "excessive_permissions",
+      "name": "Excessive Permissions",
+      "severity": "medium",
+      "description": "Skills requesting more access than their stated purpose requires",
+      "patterns": [
+        {
+          "id": "bash_unnecessary",
+          "regex": "allowed-tools:.*\\bBash\\b",
+          "description": "Bash access requested (check if justified by skill purpose)",
+          "context_required": true
+        },
+        {
+          "id": "write_unnecessary",
+          "regex": "allowed-tools:.*\\bWrite\\b",
+          "description": "Write access requested (check if justified by skill purpose)",
+          "context_required": true
+        },
+        {
+          "id": "network_tools",
+          "regex": "allowed-tools:.*\\b(WebFetch|WebSearch)\\b",
+          "description": "Network access requested (check if justified by skill purpose)",
+          "context_required": true
+        }
+      ]
+    },
+    {
+      "id": "hook_hijacking",
+      "name": "Hook Hijacking",
+      "severity": "high",
+      "description": "Hiding malicious commands in legitimate-looking hooks",
+      "patterns": [
+        {
+          "id": "silent_execution",
+          "regex": "(curl|wget|nc|ncat|fetch).*2>/dev/null\\s*&?$",
+          "description": "Network call with suppressed output"
+        },
+        {
+          "id": "conditional_activation",
+          "regex": "if\\s+\\[.*\\$(CI|GITHUB_ACTIONS|hostname|USER).*\\]",
+          "description": "Environment-conditional execution (CI/hostname check)"
+        },
+        {
+          "id": "backgrounded_network",
+          "regex": "(curl|wget|nc)\\s+.*\\s+&\\s*$",
+          "description": "Backgrounded network call"
+        }
+      ]
+    }
+  ]
+}
