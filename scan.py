@@ -209,17 +209,23 @@ def scan_file(filepath: Path, categories: list, skill_root: Path) -> list:
                     if pattern_def.get("context_required"):
                         severity = "medium"
 
-                    # Skip long base64 pattern in binary-looking files
+                    # Skip long base64 pattern in non-threat contexts
                     if pattern_def["id"] == "long_base64_string":
                         ext = filepath.suffix.lower()
                         if ext in (
                             ".png", ".jpg", ".svg", ".ico", ".woff", ".woff2",
-                            ".ttf", ".eot", ".lock", ".sum",
+                            ".ttf", ".eot", ".lock", ".sum", ".map",
                         ):
                             continue
-                        # Also skip if it looks like a hash or a package lock entry
                         stripped = line.strip()
-                        if stripped.startswith('"integrity"') or "sha256" in stripped.lower() or "sha512" in stripped.lower():
+                        # Skip hashes, checksums, integrity fields, git commits
+                        if any(kw in stripped.lower() for kw in (
+                            "sha256", "sha512", "sha1", "integrity", "checksum",
+                            "hash", "commit", "sequence", "token",
+                        )):
+                            continue
+                        # Skip JSON files that are likely data, not skills
+                        if ext == ".json" and filepath.name not in ("SKILL.md", "package.json"):
                             continue
 
                     evidence = line.strip()

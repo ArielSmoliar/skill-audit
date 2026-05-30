@@ -15,7 +15,7 @@
         },
         {
           "id": "system_override",
-          "regex": "(?i)SYSTEM\\s*(:|OVERRIDE|PROMPT|MESSAGE)",
+          "regex": "(?i)\\bSYSTEM\\s*(OVERRIDE|PROMPT)\\b",
           "description": "SYSTEM prompt impersonation"
         },
         {
@@ -124,8 +124,8 @@
         },
         {
           "id": "long_base64_string",
-          "regex": "[A-Za-z0-9+/=]{40,}",
-          "description": "Suspiciously long base64-encoded string"
+          "regex": "^[A-Za-z0-9+/]{60,}={0,2}$",
+          "description": "Suspiciously long base64-encoded string (entire line)"
         },
         {
           "id": "hex_exec",
